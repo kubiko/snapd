@@ -52,6 +52,11 @@ capability sys_admin,
 /sys/firmware/dmi/tables/DMI r,
 /sys/firmware/dmi/tables/smbios_entry_point r,
 
+# Device tree
+/sys/firmware/devicetree r,
+/proc/device-tree r,
+
+
 # interrupts
 @{PROC}/interrupts r,
 
