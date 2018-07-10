@@ -835,9 +835,11 @@ func (s *servicesTestSuite) TestAddSnapMultiUserServicesStartFailOnSystemdReload
 	c.Check(svcFiles, HasLen, 0)
 
 	first := true
+	numCall := 0
 	r := systemd.MockSystemctl(func(cmd ...string) ([]byte, error) {
 		sysdLog = append(sysdLog, cmd)
-		if len(cmd) < 3 {
+		numCall++
+		if numCall == 2 {
 			return nil, fmt.Errorf("failed")
 		}
 		if first {
@@ -870,8 +872,9 @@ func (s *servicesTestSuite) TestAddSnapMultiUserServicesStartFailOnSystemdReload
 	svcFiles, _ = filepath.Glob(filepath.Join(dirs.SnapUserServicesDir, "snap.hello-snap.*.service"))
 	c.Check(svcFiles, HasLen, 0)
 	c.Check(sysdLog, DeepEquals, [][]string{
-		{"--user", "daemon-reload"}, // this one fails
-		{"--user", "daemon-reload"}, // so does this one :-)
+		{"--root", dirs.GlobalRootDir, "enable", svc2Name},
+		{"daemon-reload"}, // this one fails
+		{"daemon-reload"}, // so does this one :-)
 	})
 }
 
@@ -1592,9 +1595,8 @@ func (s *servicesTestSuite) TestFailedAddSnapCleansUp(c *C) {
 
 	calls := 0
 	r := systemd.MockSystemctl(func(cmd ...string) ([]byte, error) {
-		if len(cmd) == 1 && cmd[0] == "daemon-reload" && calls == 0 {
-			// only fail the first systemd daemon-reload call, the
-			// second one is at the end of cleanup
+		if calls == 0 {
+			// Fail first systemctl call
 			calls += 1
 			return nil, fmt.Errorf("failed")
 		}
@@ -1681,15 +1683,22 @@ apps:
 `
 	svc1Socket := "snap.hello-snap.svc1.sock1.socket"
 	svc2Timer := "snap.hello-snap.svc2.timer"
-	svc3Name := "snap.hello-snap.svc3.service"
+	//svc3Name := "snap.hello-snap.svc3.service"
 
 	info := snaptest.MockSnap(c, snapYaml, &snap.SideInfo{Revision: snap.R(12)})
 
 	// fix the apps order to make the test stable
 	err := wrappers.AddSnapServices(info, nil, progress.Null)
 	c.Assert(err, IsNil)
-	c.Check(s.sysdLog, DeepEquals, [][]string{
-		{"daemon-reload"},
+	c.Assert(sysdLog, HasLen, 3, Commentf("len: %v calls: %v", len(sysdLog), sysdLog))
+	// TODO check independently of position
+	c.Check(sysdLog, DeepEquals, [][]string{
+		// only svc3 gets started during boot
+		{"--root", dirs.GlobalRootDir, "enable", svc3Name},
+	// 	{"show", "--property=Id,Type,ActiveState,UnitFileState,NeedDaemonReload", "snap.hello-snap.svc2.timer"},
+		{"show", "--property=Id,Type,ActiveState,UnitFileState,NeedDaemonReload", svc3Name},
+	// 	{"show", "--property=Id,Type,ActiveState,UnitFileState,NeedDaemonReload", "snap.hello-snap.svc1.sock1.socket"},
+	// 	{"daemon-reload"},
 	})
 	s.sysdLog = nil
 
@@ -1706,7 +1715,7 @@ apps:
 		{"--no-reload", "enable", svc2Timer},
 		{"start", svc2Timer},
 		{"start", svc3Name},
-	}, Commentf("calls: %v", s.sysdLog))
+	}, Commentf("calls: %v", sysdLog))
 }
 
 func (s *servicesTestSuite) TestServiceRestartDelay(c *C) {

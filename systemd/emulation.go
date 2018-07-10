@@ -44,6 +44,10 @@ func (s *emulation) DaemonReload() error {
 	return errNotImplemented
 }
 
+func (s *emulation) DaemonReloadIfNeeded(adding bool, serviceNames ...string) error {
+	return errNotImplemented
+}
+
 func (s *emulation) DaemonReexec() error {
 	return errNotImplemented
 }
@@ -182,5 +186,17 @@ func (s *emulation) Mount(what, where string, options ...string) error {
 }
 
 func (s *emulation) Umount(whatOrWhere string) error {
+	return errNotImplemented
+}
+
+func (s *emulation) IsFailed(serviceNames ...string) bool {
+	return false
+}
+
+func (s *emulation) ResetFailed(serviceNames ...string) error {
+	return errNotImplemented
+}
+
+func (s *emulation) ResetFailedIfNeeded(serviceNames ...string) error {
 	return errNotImplemented
 }

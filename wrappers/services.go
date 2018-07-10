@@ -346,6 +346,7 @@ func StartServices(apps []*snap.AppInfo, disabledSvcs []string, flags *StartServ
 		// by one, see:
 		// https://github.com/systemd/systemd/issues/8102
 		// https://lists.freedesktop.org/archives/systemd-devel/2018-January/040152.html
+		logger.Noticef("StartServices - starting %q", srv)
 		timings.Run(tm, "start-service", fmt.Sprintf("start service %q", srv), func(nested timings.Measurer) {
 			err = systemSysd.Start(srv)
 		})
@@ -384,6 +385,7 @@ type AddSnapServicesOptions struct {
 // AddSnapServices adds service units for the applications from the snap which
 // are services. The services do not get enabled or started.
 func AddSnapServices(s *snap.Info, opts *AddSnapServicesOptions, inter interacter) (err error) {
+	logger.Noticef("AddSnapServices - begin")
 	if s.Type() == snap.TypeSnapd {
 		return fmt.Errorf("internal error: adding explicit services for snapd snap is unexpected")
 	}
@@ -399,6 +401,7 @@ func AddSnapServices(s *snap.Info, opts *AddSnapServicesOptions, inter interacte
 	sysd := systemd.New(systemd.SystemMode, inter)
 	var written []string
 	var writtenSystem, writtenUser bool
+	var units []string
 
 	defer func() {
 		if err == nil {
@@ -456,6 +459,7 @@ func AddSnapServices(s *snap.Info, opts *AddSnapServicesOptions, inter interacte
 				return err
 			}
 			written = append(written, path)
+			units = append(units, filepath.Base(path))
 		}
 
 		if app.Timer != nil {
@@ -470,12 +474,13 @@ func AddSnapServices(s *snap.Info, opts *AddSnapServicesOptions, inter interacte
 				return err
 			}
 			written = append(written, path)
+			units = append(units, filepath.Base(path))
 		}
 	}
 
 	if !preseeding {
 		if writtenSystem {
-			if err = sysd.DaemonReload(); err != nil {
+			if err := sysd.DaemonReloadIfNeeded(true, units...); err != nil {
 				return err
 			}
 		}
@@ -578,12 +583,14 @@ func ServicesEnableState(s *snap.Info, inter interacter) (map[string]bool, error
 // from the snap which are services. The optional flag indicates whether
 // services are removed as part of undoing of first install of a given snap.
 func RemoveSnapServices(s *snap.Info, inter interacter) error {
+	logger.Noticef("RemoveSnapServices - begin")
 	if s.Type() == snap.TypeSnapd {
 		return fmt.Errorf("internal error: removing explicit services for snapd snap is unexpected")
 	}
 	systemSysd := systemd.New(systemd.SystemMode, inter)
 	userSysd := systemd.New(systemd.GlobalUserMode, inter)
 	var removedSystem, removedUser bool
+	services := []string{}
 
 	for _, app := range s.Apps {
 		if !app.IsService() || !osutil.FileExists(app.ServiceFile()) {
@@ -604,12 +611,14 @@ func RemoveSnapServices(s *snap.Info, inter interacter) error {
 		for _, socket := range app.Sockets {
 			path := socket.File()
 			socketServiceName := filepath.Base(path)
+			logger.Noticef("RemoveSnapServices - socket %s", socketServiceName)
+			services = append(services, socketServiceName)
 			if err := sysd.Disable(socketServiceName); err != nil {
 				return err
 			}
 
-			if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-				logger.Noticef("Failed to remove socket file %q for %q: %v", path, serviceName, err)
+     	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+     		logger.Noticef("Failed to remove socket file %q for %q: %v", path, serviceName, err)
 			}
 		}
 
@@ -617,6 +626,8 @@ func RemoveSnapServices(s *snap.Info, inter interacter) error {
 			path := app.Timer.File()
 
 			timerName := filepath.Base(path)
+			logger.Noticef("RemoveSnapServices - timer %s", timerName)
+			services = append(services, timerName)
 			if err := sysd.Disable(timerName); err != nil {
 				return err
 			}
@@ -626,6 +637,8 @@ func RemoveSnapServices(s *snap.Info, inter interacter) error {
 			}
 		}
 
+		logger.Noticef("RemoveSnapServices - disabling %s", serviceName)
+		services = append(services, serviceName)
 		if err := sysd.Disable(serviceName); err != nil {
 			return err
 		}
@@ -633,12 +646,21 @@ func RemoveSnapServices(s *snap.Info, inter interacter) error {
 		if err := os.Remove(app.ServiceFile()); err != nil && !os.IsNotExist(err) {
 			logger.Noticef("Failed to remove service file for %q: %v", serviceName, err)
 		}
+	}
 
+	// When a service is in failed state, simply disabling it does not make
+	// systemd 'forget' about it: the state is kept for administrators to
+	// take a look at it. To remove it, we use the reset-failed systemctl
+	// command - otherwise we would need a daemon-reload if we reinstall the
+	// same snap, which is much more costly.
+	if err := systemSysd.ResetFailedIfNeeded(services...); err != nil {
+		logger.Noticef("RemoveSnapServices - ResetFailedIfNeeded %v", err)
+		return err
 	}
 
 	// only reload if we actually had services
 	if removedSystem {
-		if err := systemSysd.DaemonReload(); err != nil {
+		if err := systemSysd.DaemonReloadIfNeeded(false, services...); err != nil {
 			return err
 		}
 	}

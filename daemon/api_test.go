@@ -56,6 +56,16 @@ func (s *apiSuite) TestUsersOnlyRoot(c *check.C) {
 			c.Check(cmd.RootOnly, check.Equals, true, check.Commentf(cmd.Path))
 		}
 	}
+NeedDaemonReload=no
+NeedDaemonReload=no
+NeedDaemonReload=no
+NeedDaemonReload=no
+NeedDaemonReload=no
+NeedDaemonReload=no
+NeedDaemonReload=no
+NeedDaemonReload=no
+NeedDaemonReload=no
+NeedDaemonReload=no
 }
 
 func (s *apiSuite) TestListIncludesAll(c *check.C) {

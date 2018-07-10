@@ -195,25 +195,30 @@ Type=simple
 Id=foo.service
 ActiveState=active
 UnitFileState=enabled
+NeedDaemonReload=no
 
 Type=simple
 Id=bar.service
 ActiveState=reloading
 UnitFileState=static
+NeedDaemonReload=no
 
 Type=potato
 Id=baz.service
 ActiveState=inactive
 UnitFileState=disabled
+NeedDaemonReload=yes
 `[1:]),
 		[]byte(`
 Id=some.timer
 ActiveState=active
 UnitFileState=enabled
+NeedDaemonReload=yes
 
 Id=other.socket
 ActiveState=active
 UnitFileState=disabled
+NeedDaemonReload=yes
 `[1:]),
 	}
 	s.errors = []error{nil}
@@ -221,20 +226,23 @@ UnitFileState=disabled
 	c.Assert(err, IsNil)
 	c.Check(out, DeepEquals, []*UnitStatus{
 		{
-			Daemon:   "simple",
-			UnitName: "foo.service",
-			Active:   true,
-			Enabled:  true,
+			Daemon:           "simple",
+			UnitName:         "foo.service",
+			Active:           true,
+			Enabled:          true,
+			NeedDaemonReload: false,
 		}, {
-			Daemon:   "simple",
-			UnitName: "bar.service",
-			Active:   true,
-			Enabled:  true,
+			Daemon:           "simple",
+			UnitName:         "bar.service",
+			Active:           true,
+			Enabled:          true,
+			NeedDaemonReload: false,
 		}, {
-			Daemon:   "potato",
-			UnitName: "baz.service",
-			Active:   false,
-			Enabled:  false,
+			Daemon:           "potato",
+			UnitName:         "baz.service",
+			Active:           false,
+			Enabled:          false,
+			NeedDaemonReload: true,
 		}, {
 			UnitName: "some.timer",
 			Active:   true,
@@ -247,7 +255,7 @@ UnitFileState=disabled
 	})
 	c.Check(s.rep.msgs, IsNil)
 	c.Assert(s.argses, DeepEquals, [][]string{
-		{"show", "--property=Id,ActiveState,UnitFileState,Type", "foo.service", "bar.service", "baz.service"},
+		{"show", "--property=Id,Type,ActiveState,UnitFileState,NeedDaemonReload", "foo.service", "bar.service", "baz.service"},
 		{"show", "--property=Id,ActiveState,UnitFileState", "some.timer", "other.socket"},
 	})
 }
@@ -259,11 +267,13 @@ Type=simple
 Id=foo.service
 ActiveState=active
 UnitFileState=enabled
+NeedDaemonReload=no
 
 Type=simple
 Id=foo.service
 ActiveState=active
 UnitFileState=enabled
+NeedDaemonReload=no
 `[1:]),
 	}
 	s.errors = []error{nil}
@@ -296,6 +306,7 @@ Type=simple
 Id=bar.service
 ActiveState=active
 UnitFileState=enabled
+NeedDaemonReload=no
 `[1:]),
 	}
 	s.errors = []error{nil}
@@ -312,6 +323,7 @@ Id=foo.service
 ActiveState=active
 UnitFileState=enabled
 Potatoes=false
+NeedDaemonReload=no
 `[1:]),
 	}
 	s.errors = []error{nil}
@@ -325,6 +337,7 @@ func (s *SystemdTestSuite) TestStatusMissingRequiredFieldService(c *C) {
 		[]byte(`
 Id=foo.service
 ActiveState=active
+NeedDaemonReload=no
 `[1:]),
 	}
 	s.errors = []error{nil}
@@ -354,6 +367,7 @@ Id=foo.service
 ActiveState=active
 ActiveState=active
 UnitFileState=enabled
+NeedDaemonReload=no
 `[1:]),
 	}
 	s.errors = []error{nil}
@@ -369,6 +383,7 @@ Type=simple
 Id=
 ActiveState=active
 UnitFileState=enabled
+NeedDaemonReload=no
 `[1:]),
 	}
 	s.errors = []error{nil}
@@ -474,6 +489,18 @@ func (s *SystemdTestSuite) TestUnmaskUnderRoot(c *C) {
 	err := NewUnderRoot("xyzzy", SystemMode, s.rep).Unmask("foo")
 	c.Assert(err, IsNil)
 	c.Check(s.argses, DeepEquals, [][]string{{"--root", "xyzzy", "unmask", "foo"}})
+}
+
+func (s *SystemdTestSuite) TestIsFailed(c *C) {
+	isFailed := New("xyzzy", s.rep).IsFailed("foo")
+	c.Assert(isFailed, Equals, true)
+	c.Check(s.argses, DeepEquals, [][]string{{"--root", "xyzzy", "is-failed", "foo"}})
+}
+
+func (s *SystemdTestSuite) TestResetFailed(c *C) {
+	err := New("xyzzy", s.rep).ResetFailed("foo")
+	c.Assert(err, IsNil)
+	c.Check(s.argses, DeepEquals, [][]string{{"--root", "xyzzy", "reset-failed", "foo"}})
 }
 
 func (s *SystemdTestSuite) TestRestart(c *C) {
