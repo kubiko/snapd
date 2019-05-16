@@ -48,8 +48,10 @@ const bluetoothControlConnectedPlugAppArmor = `
   /sys/devices/**/bluetooth/      rw,
   /sys/devices/**/bluetooth/**    rw,
 
-  # Requires CONFIG_BT_VHCI to be loaded
+  # Requires CONFIG_BT_VHCI to be loaded, stpbt is mtk BT device node
   /dev/vhci                       rw,
+  /dev/stpbt                      rw,
+  /dev/stpbtfwlog                 rw,
 `
 
 const bluetoothControlConnectedPlugSecComp = `
