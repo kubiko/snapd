@@ -45,6 +45,10 @@ const networkSetupControlConnectedPlugAppArmor = `
 
 /run/udev/rules.d/ rw,                 # needed for cloud-init
 /run/udev/rules.d/[0-9]*-netplan-* rw,
+
+# Needed to create new file in /etc/netplan/ if there is no existing
+# configuration
+capability dac_override,
 `
 
 func init() {
