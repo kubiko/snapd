@@ -445,6 +445,8 @@ func pruneAutoAliases(curAliases map[string]*AliasTarget, autoAliases []string) 
 
 // transition to aliases v2
 func (m *SnapManager) ensureAliasesV2() error {
+	logger.Debugf("aliases")
+	defer logger.Debugf("/aliases")
 	m.state.Lock()
 	defer m.state.Unlock()
 

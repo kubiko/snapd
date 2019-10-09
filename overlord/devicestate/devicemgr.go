@@ -30,6 +30,7 @@ import (
 	"github.com/snapcore/snapd/boot"
 	"github.com/snapcore/snapd/dirs"
 	"github.com/snapcore/snapd/i18n"
+	"github.com/snapcore/snapd/logger"
 	"github.com/snapcore/snapd/overlord/assertstate"
 	"github.com/snapcore/snapd/overlord/auth"
 	"github.com/snapcore/snapd/overlord/configstate/config"
@@ -245,6 +246,9 @@ func setClassicFallbackModel(st *state.State, device *auth.DeviceState) error {
 }
 
 func (m *DeviceManager) ensureOperational() error {
+	logger.Debugf("operational")
+	defer logger.Debugf("/operational")
+
 	m.state.Lock()
 	defer m.state.Unlock()
 
@@ -388,6 +392,9 @@ var populateStateFromSeed = populateStateFromSeedImpl
 // ensureSnaps makes sure that the snaps from seed.yaml get installed
 // with the matching assertions
 func (m *DeviceManager) ensureSeedYaml() error {
+	logger.Debugf("seed-yaml")
+	defer logger.Debugf("/seed-yaml")
+
 	m.state.Lock()
 	defer m.state.Unlock()
 
@@ -430,6 +437,9 @@ func (m *DeviceManager) ensureSeedYaml() error {
 }
 
 func (m *DeviceManager) ensureBootOk() error {
+	logger.Debugf("boot-ok")
+	defer logger.Debugf("/boot-ok")
+
 	m.state.Lock()
 	defer m.state.Unlock()
 
@@ -470,6 +480,9 @@ func markSeededInConfig(st *state.State) error {
 }
 
 func (m *DeviceManager) ensureSeedInConfig() error {
+	logger.Debugf("seed-in-config")
+	defer logger.Debugf("/seed-in-config")
+
 	m.state.Lock()
 	defer m.state.Unlock()
 

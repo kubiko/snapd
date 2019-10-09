@@ -517,6 +517,8 @@ func (m *SnapManager) RefreshSchedule() (string, bool, error) {
 // ensureForceDevmodeDropsDevmodeFromState undoes the forced devmode
 // in snapstate for forced devmode distros.
 func (m *SnapManager) ensureForceDevmodeDropsDevmodeFromState() error {
+	logger.Debugf("devmode")
+	defer logger.Debugf("/devmode")
 	if !release.ReleaseInfo.ForceDevMode() {
 		return nil
 	}
@@ -568,6 +570,8 @@ func changeInFlight(st *state.State) bool {
 
 // ensureSnapdSnapTransition will migrate systems to use the "snapd" snap
 func (m *SnapManager) ensureSnapdSnapTransition() error {
+	logger.Debugf("snapd-snap")
+	defer logger.Debugf("/snapd-snap")
 	m.state.Lock()
 	defer m.state.Unlock()
 
@@ -661,6 +665,8 @@ func (m *SnapManager) ensureSnapdSnapTransition() error {
 // ensureUbuntuCoreTransition will migrate systems that use "ubuntu-core"
 // to the new "core" snap
 func (m *SnapManager) ensureUbuntuCoreTransition() error {
+	logger.Debugf("ubuntu-core")
+	defer logger.Debugf("/ubuntu-core")
 	m.state.Lock()
 	defer m.state.Unlock()
 
@@ -721,6 +727,8 @@ func (m *SnapManager) ensureUbuntuCoreTransition() error {
 
 // atSeed implements at seeding policy for refreshes.
 func (m *SnapManager) atSeed() error {
+	logger.Debugf("atSeed")
+	defer logger.Debugf("/atSeed")
 	m.state.Lock()
 	defer m.state.Unlock()
 	var seeded bool

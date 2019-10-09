@@ -145,7 +145,9 @@ func (se *StateEngine) Ensure() error {
 	}
 	var errs []error
 	for _, m := range se.managers {
+		logger.Debugf("%T", m)
 		err := m.Ensure()
+		logger.Debugf("/%T", m)
 		if err != nil {
 			logger.Noticef("state ensure error: %v", err)
 			errs = append(errs, err)
