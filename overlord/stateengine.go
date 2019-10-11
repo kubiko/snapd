@@ -144,11 +144,26 @@ func (se *StateEngine) Ensure() error {
 		return fmt.Errorf("state engine already stopped")
 	}
 	var errs []error
-	for _, m := range se.managers {
+	var wg sync.WaitGroup
+	errors := make(chan error, len(se.managers))
+	ensureAsync := func(m StateManager, errors chan<- error) {
+		defer wg.Done()
 		err := m.Ensure()
 		if err != nil {
 			logger.Noticef("state ensure error: %v", err)
-			errs = append(errs, err)
+			errors <- err
+		}
+	}
+
+	for _, m := range se.managers {
+		wg.Add(1)
+		go ensureAsync(m, errors)
+	}
+	wg.Wait()
+	close(errors)
+	for e := range errors {
+		if e != nil {
+			errs = append(errs, e)
 		}
 	}
 	if len(errs) != 0 {
