@@ -211,6 +211,13 @@ func ensureLayoutCompatibility(gadgetLayout *gadget.LaidOutVolume, diskLayout *g
 		// filesystem must be the same
 		check := nameMatch && ds.StartOffset == gs.StartOffset && (isCreatableAtInstall(gv) || dv.Filesystem == gv.Filesystem)
 		sizeMatches := dv.Size == gv.Size
+		if nameMatch {
+			logger.Noticef("ensureLayoutCompatibility:eg(%t),sizeMatch(%t)[%s]/[%s],[%d]/[%d],[%t],[%s]/[%s],[%d][%d]",
+				check, sizeMatches, dv.Name, gv.Name, ds.StartOffset, gs.StartOffset,
+				ds.CreatedDuringInstall, dv.Filesystem, gv.Filesystem,
+				dv.Size, gv.Size)
+			return true
+		}
 		if gv.Role == gadget.SystemData {
 			// system-data may have been expanded
 			sizeMatches = dv.Size >= gv.Size
