@@ -27,6 +27,7 @@ import (
 
 	"github.com/snapcore/snapd/boot"
 	"github.com/snapcore/snapd/gadget"
+	"github.com/snapcore/snapd/logger"
 	"github.com/snapcore/snapd/secboot"
 )
 
@@ -184,6 +185,13 @@ func ensureLayoutCompatibility(gadgetLayout *gadget.LaidOutVolume, diskLayout *g
 		}
 		// Previous installation may have failed before filesystem creation or partition may be encrypted
 		check := nameMatch && ds.StartOffset == gs.StartOffset && (ds.CreatedDuringInstall || dv.Filesystem == gv.Filesystem)
+		if nameMatch {
+			logger.Noticef("ensureLayoutCompatibility:eg(%t)[%s]/[%s],[%d]/[%d],[%t],[%s]/[%s],[%d][%d]",
+				check, dv.Name, gv.Name, ds.StartOffset, gs.StartOffset,
+				ds.CreatedDuringInstall, dv.Filesystem, gv.Filesystem,
+				dv.Size, gv.Size)
+			return true
+		}
 		if gv.Role == gadget.SystemData {
 			// system-data may have been expanded
 			return check && dv.Size >= gv.Size
