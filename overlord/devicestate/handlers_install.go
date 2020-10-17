@@ -80,7 +80,9 @@ func setSysconfigCloudOptions(opts *sysconfig.Options, gadgetDir string, model *
 }
 
 func writeModel(model *asserts.Model, where string) error {
-	f, err := os.OpenFile(where, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	// TODO: what if we failed and come back here again and file exists?
+	f, err := os.OpenFile(where, os.O_WRONLY|os.O_CREATE, 0644)
+	// f, err := os.OpenFile(where, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
 		return err
 	}
@@ -164,7 +166,10 @@ func (m *DeviceManager) doSetupRunSystem(t *state.Task, _ *tomb.Tomb) error {
 	}
 
 	// keep track of the model we installed
-	err = writeModel(deviceCtx.Model(), filepath.Join(boot.InitramfsUbuntuBootDir, "model"))
+	// TODO: not all bootloaders require ubuntu-boot, use ubuntu-seed in that case
+	// how do we figure out which bootloader we have?
+	err = writeModel(deviceCtx.Model(), filepath.Join(boot.InitramfsUbuntuSeedDir, "model"))
+	// err = writeModel(deviceCtx.Model(), filepath.Join(boot.InitramfsUbuntuBootDir, "model"))
 	if err != nil {
 		return fmt.Errorf("cannot store the model: %v", err)
 	}
