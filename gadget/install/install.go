@@ -57,21 +57,45 @@ func Run(gadgetRoot, device string, options Options, observer gadget.ContentObse
 		return nil, fmt.Errorf("cannot use empty gadget root directory")
 	}
 
-	lv, err := gadget.PositionedVolumeFromGadget(gadgetRoot)
+	lvs, err := gadget.PositionedVolumesFromGadget(gadgetRoot)
 	if err != nil {
-		return nil, fmt.Errorf("cannot layout the volume: %v", err)
+		return nil, fmt.Errorf("cannot layout volumes from gadget: %v", err)
 	}
 
-	// XXX: the only situation where auto-detect is not desired is
-	//      in (spread) testing - consider to remove forcing a device
-	//
-	// auto-detect device if no device is forced
-	if device == "" {
-		device, err = deviceFromRole(lv, gadget.SystemSeed)
-		if err != nil {
-			return nil, fmt.Errorf("cannot find device to create partitions on: %v", err)
+	// we only expect to find the device from the seed role on a single volume
+	// so we need to keep track of that
+	var foundErr error
+	var ubuntuVolume *gadget.LaidOutVolume
+	for _, lv := range lvs {
+
+		// XXX: the only situation where auto-detect is not desired is
+		//      in (spread) testing - consider to remove forcing a device
+		//
+		// auto-detect device if no device is forced
+
+		// first detect if this volume has device with the role we care about
+		// as that will be used for the "main" volume with ubuntu roles on it
+		if device == "" {
+			device, foundErr = deviceFromRole(lv, gadget.SystemSeed)
+			if foundErr != nil {
+				// we didn't find the role on this volume, maybe it will be on
+				// another volume, so save the error and try again
+				continue
+			}
+			// we found the ubuntu volume
+			ubuntuVolume = lv
+			break
 		}
 	}
+	if foundErr != nil {
+		// we didn't find the role on any volumes
+		return nil, fmt.Errorf("cannot find device to create partitions on: %v", err)
+	}
+
+	// TODO: for multi-volume devices, this will not verify that the on-disk
+	// structures match those in the gadget, we will only verify the on-disk
+	// structures match those in the gadget for the volume that contains the
+	// ubuntu-* roles, but we should probably verify those other volumes too
 
 	diskLayout, err := gadget.OnDiskVolumeFromDevice(device)
 	if err != nil {
@@ -80,7 +104,7 @@ func Run(gadgetRoot, device string, options Options, observer gadget.ContentObse
 
 	// check if the current partition table is compatible with the gadget,
 	// ignoring partitions added by the installer (will be removed later)
-	if err := ensureLayoutCompatibility(lv, diskLayout); err != nil {
+	if err := ensureLayoutCompatibility(ubuntuVolume, diskLayout); err != nil {
 		return nil, fmt.Errorf("gadget and %v partition table not compatible: %v", device, err)
 	}
 
@@ -98,7 +122,7 @@ func Run(gadgetRoot, device string, options Options, observer gadget.ContentObse
 		}
 	}
 
-	created, err := createMissingPartitions(diskLayout, lv)
+	created, err := createMissingPartitions(diskLayout, ubuntuVolume)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create the partitions: %v", err)
 	}

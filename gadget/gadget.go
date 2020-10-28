@@ -1017,9 +1017,9 @@ func IsCompatible(current, new *Info) error {
 	return nil
 }
 
-// PositionedVolumeFromGadget takes a gadget rootdir and positions the
+// PositionedVolumesFromGadget takes a gadget rootdir and positions the
 // partitions as specified.
-func PositionedVolumeFromGadget(gadgetRoot string) (*LaidOutVolume, error) {
+func PositionedVolumesFromGadget(gadgetRoot string) ([]*LaidOutVolume, error) {
 	// TODO:UC20: since this is unconstrained via the model, it returns an
 	//            err == nil and an empty info when the gadgetRoot does not
 	//            actually contain the required gadget.yaml file (for example
@@ -1030,25 +1030,24 @@ func PositionedVolumeFromGadget(gadgetRoot string) (*LaidOutVolume, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Limit ourselves to just one volume for now.
-	if len(info.Volumes) != 1 {
-		return nil, fmt.Errorf("cannot position multiple volumes yet")
-	}
 
+	// TODO: should we use different layout constraints for each volume for
+	// multi-volume layouts?
 	constraints := LayoutConstraints{
 		NonMBRStartOffset: 1 * SizeMiB,
 		SectorSize:        512,
 	}
+
+	layoutVols := []*LaidOutVolume{}
 
 	for _, vol := range info.Volumes {
 		pvol, err := LayoutVolume(gadgetRoot, &vol, constraints)
 		if err != nil {
 			return nil, err
 		}
-		// we know  info.Volumes map has size 1 so we can return here
-		return pvol, nil
+		layoutVols = append(layoutVols, pvol)
 	}
-	return nil, fmt.Errorf("internal error in PositionedVolumeFromGadget: this line cannot be reached")
+	return layoutVols, nil
 }
 
 func flatten(path string, cfg interface{}, out map[string]interface{}) {
