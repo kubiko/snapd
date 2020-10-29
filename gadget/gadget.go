@@ -344,8 +344,9 @@ func InfoFromGadgetYaml(gadgetYaml []byte, model Model) (*Info, error) {
 
 	// basic validation
 	var bootloadersFound int
+	state := &validationState{}
 	for name, v := range gi.Volumes {
-		if err := validateVolume(name, &v, model); err != nil {
+		if err := validateVolume(name, &v, model,state); err != nil {
 			return nil, fmt.Errorf("invalid volume %q: %v", name, err)
 		}
 
@@ -358,6 +359,11 @@ func InfoFromGadgetYaml(gadgetYaml []byte, model Model) (*Info, error) {
 			return nil, errors.New("bootloader must be one of grub, u-boot, android-boot or lk")
 		}
 	}
+
+	if err := ensureVolumesConsistency(state, model); err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+
 	switch {
 	case bootloadersFound == 0:
 		return nil, errors.New("bootloader not declared in any volume")
@@ -409,7 +415,7 @@ type validationState struct {
 	SystemSave *VolumeStructure
 }
 
-func validateVolume(name string, vol *Volume, model Model) error {
+func validateVolume(name string, vol *Volume, model Model, state *validationState) error {
 	if !validVolumeName.MatchString(name) {
 		return errors.New("invalid name")
 	}
@@ -424,7 +430,6 @@ func validateVolume(name string, vol *Volume, model Model) error {
 	// for validating structure overlap
 	structures := make([]LaidOutStructure, len(vol.Structure))
 
-	state := &validationState{}
 	previousEnd := Size(0)
 	for idx, s := range vol.Structure {
 		if err := validateVolumeStructure(&s, vol); err != nil {
@@ -483,17 +488,13 @@ func validateVolume(name string, vol *Volume, model Model) error {
 		previousEnd = end
 	}
 
-	if err := ensureVolumeConsistency(state, model); err != nil {
-		return err
-	}
-
 	// sort by starting offset
 	sort.Sort(byStartOffset(structures))
 
 	return validateCrossVolumeStructure(structures, knownStructures)
 }
 
-func ensureVolumeConsistencyNoConstraints(state *validationState) error {
+func ensureVolumesConsistencyNoConstraints(state *validationState) error {
 	switch {
 	case state.SystemSeed == nil && state.SystemData == nil:
 		// happy so far
@@ -516,7 +517,7 @@ func ensureVolumeConsistencyNoConstraints(state *validationState) error {
 	return nil
 }
 
-func ensureVolumeConsistencyWithConstraints(state *validationState, model Model) error {
+func ensureVolumesConsistencyWithConstraints(state *validationState, model Model) error {
 	switch {
 	case state.SystemSeed == nil && state.SystemData == nil:
 		if wantsSystemSeed(model) {
@@ -551,11 +552,11 @@ func ensureVolumeConsistencyWithConstraints(state *validationState, model Model)
 	return nil
 }
 
-func ensureVolumeConsistency(state *validationState, model Model) error {
+func ensureVolumesConsistency(state *validationState, model Model) error {
 	if model == nil {
-		return ensureVolumeConsistencyNoConstraints(state)
+		return ensureVolumesConsistencyNoConstraints(state)
 	}
-	return ensureVolumeConsistencyWithConstraints(state, model)
+	return ensureVolumesConsistencyWithConstraints(state, model)
 }
 
 func ensureSeedDataLabelsUnset(state *validationState) error {
