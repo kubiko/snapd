@@ -20,13 +20,11 @@
 package main
 
 import (
-	"os"
-	"strings"
+	"fmt"
 
 	"github.com/jessevdk/go-flags"
 
 	"github.com/snapcore/snapd/i18n"
-	"github.com/snapcore/snapd/image"
 )
 
 type cmdPrepareImage struct {
@@ -82,40 +80,8 @@ For preparing classic images it supports a --classic mode`),
 		})
 }
 
-var imagePrepare = image.Prepare
 
 func (x *cmdPrepareImage) Execute(args []string) error {
-	opts := &image.Options{
-		Snaps:        x.ExtraSnaps,
-		ModelFile:    x.Positional.ModelAssertionFn,
-		Channel:      x.Channel,
-		Architecture: x.Architecture,
-	}
-
-	snaps := make([]string, 0, len(x.Snaps)+len(x.ExtraSnaps))
-	snapChannels := make(map[string]string)
-	for _, snapWChannel := range x.Snaps {
-		snapAndChannel := strings.SplitN(snapWChannel, "=", 2)
-		snaps = append(snaps, snapAndChannel[0])
-		if len(snapAndChannel) == 2 {
-			snapChannels[snapAndChannel[0]] = snapAndChannel[1]
-		}
-	}
-
-	snaps = append(snaps, x.ExtraSnaps...)
-
-	if len(snaps) != 0 {
-		opts.Snaps = snaps
-	}
-	if len(snapChannels) != 0 {
-		opts.SnapChannels = snapChannels
-	}
-
-	// store-wide cohort key via env, see image/options.go
-	opts.WideCohortKey = os.Getenv("UBUNTU_STORE_COHORT_KEY")
-
-	opts.PrepareDir = x.Positional.TargetDir
-	opts.Classic = x.Classic
-
-	return imagePrepare(opts)
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
+	return nil
 }

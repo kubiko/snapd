@@ -43,7 +43,6 @@ import (
 	"github.com/snapcore/snapd/osutil"
 	"github.com/snapcore/snapd/release"
 	"github.com/snapcore/snapd/snap"
-	"github.com/snapcore/snapd/snap/squashfs"
 	"github.com/snapcore/snapd/snapdenv"
 	"github.com/snapcore/snapd/snapdtool"
 )
@@ -429,7 +428,6 @@ func resolveApp(snapApp string) (string, error) {
 // exitCodeFromError takes an error and returns specific exit codes
 // for some errors. Otherwise the generic exit code 1 is returned.
 func exitCodeFromError(err error) int {
-	var mksquashfsError squashfs.MksquashfsError
 	var cmdlineFlagsError *flags.Error
 	var unknownCmdError unknownCommandError
 
@@ -438,8 +436,6 @@ func exitCodeFromError(err error) int {
 		return 0
 	case client.IsRetryable(err):
 		return 10
-	case xerrors.As(err, &mksquashfsError):
-		return 20
 	case xerrors.As(err, &cmdlineFlagsError) || xerrors.As(err, &unknownCmdError):
 		// EX_USAGE, see sysexit.h
 		return 64
@@ -454,22 +450,6 @@ func main() {
 	// check for magic symlink to /usr/bin/snap:
 	// 1. symlink from command-not-found to /usr/bin/snap: run c-n-f
 	if os.Args[0] == filepath.Join(dirs.GlobalRootDir, "/usr/lib/command-not-found") {
-		cmd := &cmdAdviseSnap{
-			Command: true,
-			Format:  "pretty",
-		}
-		// the bash.bashrc handler runs:
-		//    /usr/lib/command-not-found -- "$1"
-		// so skip over any "--"
-		for _, arg := range os.Args[1:] {
-			if arg != "--" {
-				cmd.Positionals.CommandOrPkg = arg
-				break
-			}
-		}
-		if err := cmd.Execute(nil); err != nil {
-			fmt.Fprintln(Stderr, err)
-		}
 		return
 	}
 

@@ -21,18 +21,10 @@ package main
 
 import (
 	"fmt"
-	"path/filepath"
-
-	"golang.org/x/xerrors"
 
 	"github.com/jessevdk/go-flags"
 
 	"github.com/snapcore/snapd/i18n"
-	"github.com/snapcore/snapd/snap"
-	"github.com/snapcore/snapd/snap/pack"
-
-	// for SanitizePlugsSlots
-	"github.com/snapcore/snapd/interfaces/builtin"
 )
 
 type packCmd struct {
@@ -85,41 +77,6 @@ func init() {
 }
 
 func (x *packCmd) Execute([]string) error {
-	// plug/slot sanitization is disabled (no-op) by default at the package level for "snap" command,
-	// for "snap pack" however we want real validation.
-	snap.SanitizePlugsSlots = builtin.SanitizePlugsSlots
-
-	if x.Positional.TargetDir != "" && x.Filename != "" && filepath.IsAbs(x.Filename) {
-		return fmt.Errorf(i18n.G("you can't specify an absolute filename while also specifying target dir."))
-	}
-
-	if x.Positional.SnapDir == "" {
-		x.Positional.SnapDir = "."
-	}
-	if x.Positional.TargetDir == "" {
-		x.Positional.TargetDir = "."
-	}
-
-	if x.CheckSkeleton {
-		err := pack.CheckSkeleton(Stderr, x.Positional.SnapDir)
-		if err == snap.ErrMissingPaths {
-			return nil
-		}
-		return err
-	}
-
-	snapPath, err := pack.Snap(x.Positional.SnapDir, &pack.Options{
-		TargetDir:   x.Positional.TargetDir,
-		SnapName:    x.Filename,
-		Compression: x.Compression,
-	})
-	if err != nil {
-		// TRANSLATORS: the %q is the snap-dir (the first positional
-		// argument to the command); the %v is an error
-		return xerrors.Errorf(i18n.G("cannot pack %q: %w"), x.Positional.SnapDir, err)
-
-	}
-	// TRANSLATORS: %s is the path to the built snap file
-	fmt.Fprintf(Stdout, i18n.G("built: %s\n"), snapPath)
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
 	return nil
 }

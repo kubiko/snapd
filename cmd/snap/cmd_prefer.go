@@ -20,6 +20,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/snapcore/snapd/i18n"
 
 	"github.com/jessevdk/go-flags"
@@ -48,21 +50,7 @@ func init() {
 }
 
 func (x *cmdPrefer) Execute(args []string) error {
-	if len(args) > 0 {
-		return ErrExtraArgs
-	}
 
-	id, err := x.client.Prefer(string(x.Positionals.Snap))
-	if err != nil {
-		return err
-	}
-	chg, err := x.wait(id)
-	if err != nil {
-		if err == noWait {
-			return nil
-		}
-		return err
-	}
-
-	return showAliasChanges(chg)
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
+	return nil
 }

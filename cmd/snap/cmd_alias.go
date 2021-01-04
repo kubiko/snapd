@@ -21,14 +21,10 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"text/tabwriter"
 
 	"github.com/jessevdk/go-flags"
 
-	"github.com/snapcore/snapd/client"
 	"github.com/snapcore/snapd/i18n"
-	"github.com/snapcore/snapd/snap"
 )
 
 type cmdAlias struct {
@@ -60,59 +56,6 @@ func init() {
 }
 
 func (x *cmdAlias) Execute(args []string) error {
-	if len(args) > 0 {
-		return ErrExtraArgs
-	}
-
-	snapName, appName := snap.SplitSnapApp(string(x.Positionals.SnapApp))
-	alias := x.Positionals.Alias
-
-	id, err := x.client.Alias(snapName, appName, alias)
-	if err != nil {
-		return err
-	}
-	chg, err := x.wait(id)
-	if err != nil {
-		if err == noWait {
-			return nil
-		}
-		return err
-	}
-
-	return showAliasChanges(chg)
-}
-
-type changedAlias struct {
-	Snap  string `json:"snap"`
-	App   string `json:"app"`
-	Alias string `json:"alias"`
-}
-
-func showAliasChanges(chg *client.Change) error {
-	var added, removed []*changedAlias
-	if err := chg.Get("aliases-added", &added); err != nil && err != client.ErrNoData {
-		return err
-	}
-	if err := chg.Get("aliases-removed", &removed); err != nil && err != client.ErrNoData {
-		return err
-	}
-	w := tabwriter.NewWriter(Stdout, 2, 2, 1, ' ', 0)
-	if len(added) != 0 {
-		// TRANSLATORS: this is used to introduce a list of aliases that were added
-		printChangedAliases(w, i18n.G("Added"), added)
-	}
-	if len(removed) != 0 {
-		// TRANSLATORS: this is used to introduce a list of aliases that were removed
-		printChangedAliases(w, i18n.G("Removed"), removed)
-	}
-	w.Flush()
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
 	return nil
-}
-
-func printChangedAliases(w io.Writer, label string, changed []*changedAlias) {
-	fmt.Fprintf(w, "%s:\n", label)
-	for _, a := range changed {
-		// TRANSLATORS: the first %s is a snap command (e.g. "hello-world.echo"), the second is the alias
-		fmt.Fprintf(w, i18n.G("\t- %s as %s\n"), snap.JoinSnapApp(a.Snap, a.App), a.Alias)
-	}
 }

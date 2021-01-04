@@ -52,7 +52,6 @@ import (
 	"github.com/snapcore/snapd/snap/snapenv"
 	"github.com/snapcore/snapd/strutil/shlex"
 	"github.com/snapcore/snapd/timeutil"
-	"github.com/snapcore/snapd/x11"
 )
 
 var (
@@ -635,9 +634,9 @@ func migrateXauthority(info *snap.Info) (string, error) {
 	// To guard against setting XAUTHORITY to non-xauth files, check
 	// that we have a valid Xauthority. Specifically, the file must be
 	// parseable as an Xauthority file and not be empty.
-	if err := x11.ValidateXauthority(fin); err != nil {
-		return "", err
-	}
+	// if err := x11.ValidateXauthority(fin); err != nil {
+	// 	return "", err
+	// }
 
 	// Read data from the beginning of the file
 	if _, err = fin.Seek(int64(os.SEEK_SET), 0); err != nil {

@@ -40,7 +40,6 @@ import (
 	"github.com/snapcore/snapd/osutil"
 	"github.com/snapcore/snapd/snap"
 	"github.com/snapcore/snapd/snap/snapfile"
-	"github.com/snapcore/snapd/snap/squashfs"
 	"github.com/snapcore/snapd/strutil"
 )
 
@@ -446,11 +445,6 @@ func (iw *infoWriter) maybePrintBuildDate() {
 	if osutil.IsDirectory(iw.path) {
 		return
 	}
-	buildDate := squashfs.BuildDate(iw.path)
-	if buildDate.IsZero() {
-		return
-	}
-	fmt.Fprintf(iw, "build-date:\t%s\n", iw.fmtTime(buildDate))
 }
 
 func (iw *infoWriter) maybePrintContact() error {

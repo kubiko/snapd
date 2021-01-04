@@ -21,95 +21,12 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/jessevdk/go-flags"
 
 	"github.com/snapcore/snapd/i18n"
-	"github.com/snapcore/snapd/strutil"
-	"github.com/snapcore/snapd/strutil/quantity"
 )
 
-func fmtSize(size int64) string {
-	return quantity.FormatAmount(uint64(size), -1) + "B"
-}
-
-var (
-	shortSavedHelp          = i18n.G("List currently stored snapshots")
-	shortSaveHelp           = i18n.G("Save a snapshot of the current data")
-	shortForgetHelp         = i18n.G("Delete a snapshot")
-	shortCheckHelp          = i18n.G("Check a snapshot")
-	shortRestoreHelp        = i18n.G("Restore a snapshot")
-	shortExportSnapshotHelp = i18n.G("Export a snapshot")
-	shortImportSnapshotHelp = i18n.G("Import a snapshot")
-)
-
-var longSavedHelp = i18n.G(`
-The saved command displays a list of snapshots that have been created
-previously with the 'save' command.
-`)
-var longSaveHelp = i18n.G(`
-The save command creates a snapshot of the current user, system and
-configuration data for the given snaps.
-
-By default, this command saves the data of all snaps for all users.
-Alternatively, you can specify the data of which snaps to save, or
-for which users, or a combination of these.
-
-If a snap is included in a save operation, excluding its system and
-configuration data from the snapshot is not currently possible. This
-restriction may be lifted in the future.
-`)
-var longForgetHelp = i18n.G(`
-The forget command deletes a snapshot. This operation can not be
-undone.
-
-A snapshot contains archives for the user, system and configuration
-data of each snap included in the snapshot.
-
-By default, this command forgets all the data in a snapshot.
-Alternatively, you can specify the data of which snaps to forget.
-`)
-var longCheckHelp = i18n.G(`
-The check-snapshot command verifies the user, system and configuration
-data of the snaps included in the specified snapshot.
-
-The check operation runs the same data integrity verification that is
-performed when a snapshot is restored.
-
-By default, this command checks all the data in a snapshot.
-Alternatively, you can specify the data of which snaps to check, or
-for which users, or a combination of these.
-
-If a snap is included in a check-snapshot operation, excluding its
-system and configuration data from the check is not currently
-possible. This restriction may be lifted in the future.
-`)
-var longRestoreHelp = i18n.G(`
-The restore command replaces the current user, system and
-configuration data of included snaps, with the corresponding data from
-the specified snapshot.
-
-By default, this command restores all the data in a snapshot.
-Alternatively, you can specify the data of which snaps to restore, or
-for which users, or a combination of these.
-
-If a snap is included in a restore operation, excluding its system and
-configuration data from the restore is not currently possible. This
-restriction may be lifted in the future.
-`)
-
-var longExportSnapshotHelp = i18n.G(`
-Export a snapshot to the given filename.
-`)
-
-var longImportSnapshotHelp = i18n.G(`
-Import an exported snapshot set to the system. The snapshot is imported
-with a new snapshot ID and can be restored using the restore command.
-`)
 
 type savedCmd struct {
 	clientMixin
@@ -121,57 +38,7 @@ type savedCmd struct {
 }
 
 func (x *savedCmd) Execute([]string) error {
-	var setID uint64
-	var err error
-	if x.ID != "" {
-		setID, err = x.ID.ToUint()
-		if err != nil {
-			return err
-		}
-	}
-	snaps := installedSnapNames(x.Positional.Snaps)
-	list, err := x.client.SnapshotSets(setID, snaps)
-	if err != nil {
-		return err
-	}
-	if len(list) == 0 {
-		fmt.Fprintln(Stdout, i18n.G("No snapshots found."))
-		return nil
-	}
-
-	w := tabWriter()
-	defer w.Flush()
-
-	fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-		// TRANSLATORS: 'Set' as in group or bag of things
-		i18n.G("Set"),
-		"Snap",
-		// TRANSLATORS: 'Age' as in how old something is
-		i18n.G("Age"),
-		i18n.G("Version"),
-		// TRANSLATORS: 'Rev' is an abbreviation of 'Revision'
-		i18n.G("Rev"),
-		i18n.G("Size"),
-		// TRANSLATORS: 'Notes' as in 'Comments'
-		i18n.G("Notes"))
-	for _, sg := range list {
-		for _, sh := range sg.Snapshots {
-			notes := []string{}
-			if sh.Auto {
-				notes = append(notes, "auto")
-			}
-			if sh.Broken != "" {
-				notes = append(notes, "broken: "+sh.Broken)
-			}
-			note := "-"
-			if len(notes) > 0 {
-				note = strings.Join(notes, ", ")
-			}
-			size := fmtSize(sh.Size)
-			age := x.fmtDuration(sh.Time)
-			fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\t%s\n", sg.ID, sh.Snap, age, sh.Version, sh.Revision, size, note)
-		}
-	}
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
 	return nil
 }
 
@@ -185,25 +52,8 @@ type saveCmd struct {
 }
 
 func (x *saveCmd) Execute([]string) error {
-	snaps := installedSnapNames(x.Positional.Snaps)
-	users := strutil.CommaSeparatedList(x.Users)
-	setID, changeID, err := x.client.SnapshotMany(snaps, users)
-	if err != nil {
-		return err
-	}
-	if _, err := x.wait(changeID); err != nil {
-		if err == noWait {
-			return nil
-		}
-		return err
-	}
-
-	y := &savedCmd{
-		clientMixin:   x.clientMixin,
-		durationMixin: x.durationMixin,
-		ID:            snapshotID(strconv.FormatUint(setID, 10)),
-	}
-	return y.Execute(nil)
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
+	return nil
 }
 
 type forgetCmd struct {
@@ -215,29 +65,7 @@ type forgetCmd struct {
 }
 
 func (x *forgetCmd) Execute([]string) error {
-	setID, err := x.Positional.ID.ToUint()
-	if err != nil {
-		return err
-	}
-	snaps := installedSnapNames(x.Positional.Snaps)
-	changeID, err := x.client.ForgetSnapshots(setID, snaps)
-	if err != nil {
-		return err
-	}
-	_, err = x.wait(changeID)
-	if err == noWait {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	if len(snaps) > 0 {
-		// TRANSLATORS: the %s is a comma-separated list of quoted snap names
-		fmt.Fprintf(Stdout, i18n.NG("Snapshot #%s of snap %s forgotten.\n", "Snapshot #%s of snaps %s forgotten.\n", len(snaps)), x.Positional.ID, strutil.Quoted(snaps))
-	} else {
-		fmt.Fprintf(Stdout, i18n.G("Snapshot #%s forgotten.\n"), x.Positional.ID)
-	}
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
 	return nil
 }
 
@@ -251,32 +79,7 @@ type checkSnapshotCmd struct {
 }
 
 func (x *checkSnapshotCmd) Execute([]string) error {
-	setID, err := x.Positional.ID.ToUint()
-	if err != nil {
-		return err
-	}
-	snaps := installedSnapNames(x.Positional.Snaps)
-	users := strutil.CommaSeparatedList(x.Users)
-	changeID, err := x.client.CheckSnapshots(setID, snaps, users)
-	if err != nil {
-		return err
-	}
-	_, err = x.wait(changeID)
-	if err == noWait {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	// TODO: also mention the home archives that were actually checked
-	if len(snaps) > 0 {
-		// TRANSLATORS: the %s is a comma-separated list of quoted snap names
-		fmt.Fprintf(Stdout, i18n.G("Snapshot #%s of snaps %s verified successfully.\n"),
-			x.Positional.ID, strutil.Quoted(snaps))
-	} else {
-		fmt.Fprintf(Stdout, i18n.G("Snapshot #%s verified successfully.\n"), x.Positional.ID)
-	}
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
 	return nil
 }
 
@@ -290,39 +93,14 @@ type restoreCmd struct {
 }
 
 func (x *restoreCmd) Execute([]string) error {
-	setID, err := x.Positional.ID.ToUint()
-	if err != nil {
-		return err
-	}
-	snaps := installedSnapNames(x.Positional.Snaps)
-	users := strutil.CommaSeparatedList(x.Users)
-	changeID, err := x.client.RestoreSnapshots(setID, snaps, users)
-	if err != nil {
-		return err
-	}
-	_, err = x.wait(changeID)
-	if err == noWait {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	// TODO: also mention the home archives that were actually restored
-	if len(snaps) > 0 {
-		// TRANSLATORS: the %s is a comma-separated list of quoted snap names
-		fmt.Fprintf(Stdout, i18n.G("Restored snapshot #%s of snaps %s.\n"),
-			x.Positional.ID, strutil.Quoted(snaps))
-	} else {
-		fmt.Fprintf(Stdout, i18n.G("Restored snapshot #%s.\n"), x.Positional.ID)
-	}
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
 	return nil
 }
 
 func init() {
 	addCommand("saved",
-		shortSavedHelp,
-		longSavedHelp,
+		i18n.G("List currently stored snapshots"),
+		i18n.G("List currently stored snapshots"),
 		func() flags.Commander {
 			return &savedCmd{}
 		},
@@ -333,8 +111,8 @@ func init() {
 		nil)
 
 	addCommand("save",
-		shortSaveHelp,
-		longSaveHelp,
+		i18n.G("Save a snapshot of the current data"),
+		i18n.G("Save a snapshot of the current data"),
 		func() flags.Commander {
 			return &saveCmd{}
 		}, durationDescs.also(waitDescs).also(map[string]string{
@@ -343,8 +121,8 @@ func init() {
 		}), nil)
 
 	addCommand("restore",
-		shortRestoreHelp,
-		longRestoreHelp,
+		i18n.G("Restore a snapshot"),
+		i18n.G("Restore a snapshot"),
 		func() flags.Commander {
 			return &restoreCmd{}
 		}, waitDescs.also(map[string]string{
@@ -363,8 +141,8 @@ func init() {
 		})
 
 	addCommand("forget",
-		shortForgetHelp,
-		longForgetHelp,
+		i18n.G("Delete a snapshot"),
+		i18n.G("Delete a snapshot"),
 		func() flags.Commander {
 			return &forgetCmd{}
 		}, waitDescs, []argDesc{
@@ -380,8 +158,8 @@ func init() {
 		})
 
 	addCommand("check-snapshot",
-		shortCheckHelp,
-		longCheckHelp,
+		i18n.G("Check a snapshot"),
+		i18n.G("Check a snapshot"),
 		func() flags.Commander {
 			return &checkSnapshotCmd{}
 		}, waitDescs.also(map[string]string{
@@ -400,8 +178,8 @@ func init() {
 		})
 
 	addCommand("export-snapshot",
-		shortExportSnapshotHelp,
-		longExportSnapshotHelp,
+		i18n.G("Export a snapshot"),
+		i18n.G("Export a snapshot"),
 		func() flags.Commander {
 			return &exportSnapshotCmd{}
 		}, nil, []argDesc{
@@ -419,8 +197,8 @@ func init() {
 		})
 
 	addCommand("import-snapshot",
-		shortImportSnapshotHelp,
-		longImportSnapshotHelp,
+		i18n.G("Import a snapshot"),
+		i18n.G("Import a snapshot"),
 		func() flags.Commander {
 			return &importSnapshotCmd{}
 		}, nil, []argDesc{
@@ -441,47 +219,7 @@ type exportSnapshotCmd struct {
 }
 
 func (x *exportSnapshotCmd) Execute([]string) (err error) {
-	setID, err := x.Positional.ID.ToUint()
-	if err != nil {
-		return err
-	}
-
-	r, expectedSize, err := x.client.SnapshotExport(setID)
-	if err != nil {
-		return err
-	}
-
-	filename := x.Positional.Filename
-	f, err := os.Create(filename + ".part")
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	defer func() {
-		if err != nil {
-			os.Remove(filename + ".part")
-		}
-	}()
-
-	// Pre-allocate the disk space for the snapshot, if the file system supports this.
-	if err := maybeReserveDiskSpace(f, expectedSize); err != nil {
-		return fmt.Errorf(i18n.G("cannot reserve disk space for snapshot: %v"), err)
-	}
-
-	n, err := io.Copy(f, r)
-	if err != nil {
-		return err
-	}
-	if n != expectedSize {
-		return fmt.Errorf(i18n.G("unexpected size, got: %v but wanted %v"), n, expectedSize)
-	}
-
-	if err := os.Rename(filename+".part", filename); err != nil {
-		return err
-	}
-
-	// TRANSLATORS: the first argument is the identifier of the snapshot, the second one is the file name.
-	fmt.Fprintf(Stdout, i18n.G("Exported snapshot #%s into %q\n"), x.Positional.ID, x.Positional.Filename)
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
 	return nil
 }
 
@@ -494,30 +232,6 @@ type importSnapshotCmd struct {
 }
 
 func (x *importSnapshotCmd) Execute([]string) error {
-	filename := x.Positional.Filename
-	f, err := os.Open(filename)
-	if err != nil {
-		return fmt.Errorf("error accessing file: %v", err)
-	}
-	defer f.Close()
-	st, err := f.Stat()
-	if err != nil {
-		return fmt.Errorf("cannot stat file: %v", err)
-	}
-
-	importSet, err := x.client.SnapshotImport(f, st.Size())
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintf(Stdout, i18n.G("Imported snapshot as #%d\n"), importSet.ID)
-	// Now display the details about this snapshot, re-use the
-	// "snap saved" command for this which displays details about
-	// the snapshot.
-	y := &savedCmd{
-		clientMixin:   x.clientMixin,
-		durationMixin: x.durationMixin,
-		ID:            snapshotID(strconv.FormatUint(importSet.ID, 10)),
-	}
-	return y.Execute(nil)
+	fmt.Fprintf(Stdout, i18n.G("Not supported\n"))
+	return nil
 }

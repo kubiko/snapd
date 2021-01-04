@@ -21,7 +21,6 @@ package main
 
 import (
 	"github.com/jessevdk/go-flags"
-	"gopkg.in/yaml.v2"
 
 	"github.com/snapcore/snapd/i18n"
 )
@@ -40,46 +39,12 @@ new 90 days window started.
 `)
 
 type cmdCreateCohort struct {
-	clientMixin
-	Positional struct {
-		Snaps []anySnapName `positional-arg-name:"<snap>" required:"1"`
-	} `positional-args:"yes" required:"yes"`
 }
 
 func init() {
 	addCommand("create-cohort", shortCreateCohortHelp, longCreateCohortHelp, func() flags.Commander { return &cmdCreateCohort{} }, nil, nil)
 }
 
-// output should be YAML, so we use these two as helpers to get that done easy
-type cohortInnerYAML struct {
-	CohortKey string `yaml:"cohort-key"`
-}
-type cohortOutYAML struct {
-	Cohorts map[string]cohortInnerYAML `yaml:"cohorts"`
-}
-
 func (x *cmdCreateCohort) Execute(args []string) error {
-	if len(args) > 0 {
-		return ErrExtraArgs
-	}
-
-	snaps := make([]string, len(x.Positional.Snaps))
-	for i, s := range x.Positional.Snaps {
-		snaps[i] = string(s)
-	}
-
-	cohorts, err := x.client.CreateCohorts(snaps)
-	if len(cohorts) == 0 || err != nil {
-		return err
-	}
-
-	var out cohortOutYAML
-	out.Cohorts = make(map[string]cohortInnerYAML, len(cohorts))
-	for k, v := range cohorts {
-		out.Cohorts[k] = cohortInnerYAML{v}
-	}
-
-	enc := yaml.NewEncoder(Stdout)
-	defer enc.Close()
-	return enc.Encode(out)
+	return nil
 }
