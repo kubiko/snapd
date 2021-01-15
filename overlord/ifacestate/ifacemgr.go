@@ -101,14 +101,14 @@ func Manager(s *state.State, hookManager *hookstate.HookManager, runner *state.T
 	addHandler("discard-conns", m.doDiscardConns, m.undoDiscardConns)
 	addHandler("auto-connect", m.doAutoConnect, m.undoAutoConnect)
 	addHandler("auto-disconnect", m.doAutoDisconnect, nil)
-	addHandler("hotplug-add-slot", m.doHotplugAddSlot, nil)
-	addHandler("hotplug-connect", m.doHotplugConnect, nil)
-	addHandler("hotplug-update-slot", m.doHotplugUpdateSlot, nil)
-	addHandler("hotplug-remove-slot", m.doHotplugRemoveSlot, nil)
-	addHandler("hotplug-disconnect", m.doHotplugDisconnect, nil)
+	// addHandler("hotplug-add-slot", m.doHotplugAddSlot, nil)
+	// addHandler("hotplug-connect", m.doHotplugConnect, nil)
+	// addHandler("hotplug-update-slot", m.doHotplugUpdateSlot, nil)
+	// addHandler("hotplug-remove-slot", m.doHotplugRemoveSlot, nil)
+	// addHandler("hotplug-disconnect", m.doHotplugDisconnect, nil)
 
 	// don't block on hotplug-seq-wait task
-	runner.AddHandler("hotplug-seq-wait", m.doHotplugSeqWait, nil)
+	// runner.AddHandler("hotplug-seq-wait", m.doHotplugSeqWait, nil)
 
 	// helper for ubuntu-core -> core
 	addHandler("transition-ubuntu-core", m.doTransitionUbuntuCore, m.undoTransitionUbuntuCore)
@@ -135,7 +135,7 @@ func Manager(s *state.State, hookManager *hookstate.HookManager, runner *state.T
 func (m *InterfaceManager) StartUp() error {
 	s := m.state
 	perfTimings := timings.New(map[string]string{"startup": "ifacemgr"})
-
+	m.udevMonitorDisabled = false
 	s.Lock()
 	defer s.Unlock()
 
@@ -187,6 +187,7 @@ func (m *InterfaceManager) Ensure() error {
 	if m.preseed {
 		return nil
 	}
+	m.udevMonitorDisabled = false
 
 	if m.udevMonitorDisabled {
 		return nil

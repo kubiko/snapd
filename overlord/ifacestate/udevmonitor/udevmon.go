@@ -118,6 +118,8 @@ func (m *Monitor) disconnect() error {
 // handles hotplug events (devices added or removed). It returns immediately.
 // The goroutine must be stopped by calling Stop() method.
 func (m *Monitor) Run() error {
+	logger.Noticef("OK:udevMon: Run")
+/*
 	// Gather devices from udevadm info output (enumeration on startup).
 	devices, parseErrors, err := hotplug.EnumerateExistingDevices()
 	if err != nil {
@@ -154,7 +156,7 @@ func (m *Monitor) Run() error {
 			}
 		}
 	})
-
+*/
 	return nil
 }
 
