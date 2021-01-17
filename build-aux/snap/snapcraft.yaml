@@ -60,13 +60,3 @@ parts:
     stage:
       - -usr/lib/snapd/snap-bootstrap
       - -usr/lib/snapd/snap-recovery-chooser
-
-  # xdelta is used to enable delta downloads (even if the host does not have it)
-  xdelta3:
-    plugin: nil
-    stage-packages:
-      - xdelta3
-    stage:
-      - usr/bin/*
-      - usr/lib/*
-      - lib/*
