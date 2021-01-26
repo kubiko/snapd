@@ -372,6 +372,7 @@ func (s *systemd) DaemonReload() error {
 }
 
 func (s *systemd) daemonReloadNoLock() error {
+	logger.Noticef("daemonReloadNoLock")
 	daemonReloadLock.Taken("cannot use daemon-reload without lock")
 
 	_, err := s.systemctl("daemon-reload")
@@ -423,6 +424,7 @@ func (s *systemd) DaemonReexec() error {
 }
 
 func (s *systemd) Enable(serviceName string) error {
+	logger.Noticef("Enable[%s]", serviceName)
 	var err error
 	if s.rootDir != "" {
 		_, err = s.systemctl("--root", s.rootDir, "--no-reload", "enable", serviceName)
@@ -443,6 +445,7 @@ func (s *systemd) Unmask(serviceName string) error {
 }
 
 func (s *systemd) Disable(serviceName string) error {
+	logger.Noticef("Disable[%s]", serviceName)
 	var err error
 	if s.rootDir != "" {
 		_, err = s.systemctl("--root", s.rootDir, "--no-reload", "disable", serviceName)
@@ -1042,6 +1045,7 @@ func (s *systemd) AddMountUnitFile(snapName, revision, what, where, fstype strin
 
 	// occasionally we need to do a daemon-reload here to ensure that systemd really
 	// knows about this new mount unit file
+	logger.Noticef("AddMountUnitFile - %q", mountUnitName)
 	if err := s.daemonReloadIfNeededWithLock(true, true, mountUnitName); err != nil {
 		return "", err
 	}
@@ -1069,6 +1073,7 @@ func (s *systemd) RemoveMountUnitFile(mountedDir string) error {
 	// can be unmounted.
 	// note that the long option --lazy is not supported on trusty.
 	// the explicit -d is only needed on trusty.
+	logger.Noticef("RemoveMountUnitFile - %q", unit)
 	isMounted, err := osutilIsMounted(mountedDir)
 	if err != nil {
 		return err
