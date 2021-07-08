@@ -42,14 +42,30 @@ func FormatEncryptedDevice(key EncryptionKey, label, node string) error {
 		MetadataKiBSize:     metadataKiBSize,
 		KeyslotsAreaKiBSize: keyslotsAreaKiBSize,
 	}
-	return sbInitializeLUKS2Container(node, label, key[:], opts)
+	pbkdfOpts := &sb.PbkdfLUKS2ContainerOptions{
+		// TODO: use values from benchmarking on actual device passed through
+		// gadget snap as system option defaults
+		PbkdfMmemory:        30000,
+		PkdfForceIterations: 4,
+		PbkdfParallel:       4,
+
+	}
+	return sbInitializeLUKS2Container(node, label, key[:], opts, pbkdfOpts)
 }
 
 // AddRecoveryKey adds a fallback recovery key rkey to the existing encrypted
 // volume created with FormatEncryptedDevice on the block device given by node.
 // The existing key to the encrypted volume is provided in the key argument.
 func AddRecoveryKey(key EncryptionKey, rkey RecoveryKey, node string) error {
-	return sbAddRecoveryKeyToLUKS2Container(node, key[:], sb.RecoveryKey(rkey))
+	pbkdfOpts := &sb.PbkdfLUKS2ContainerOptions{
+		// TODO: use values from benchmarking on actual device passed through
+		// gadget snap as system option defaults
+		PbkdfMmemory:        30000,
+		PkdfForceIterations: 4,
+		PbkdfParallel:       4,
+
+	}
+	return sbAddRecoveryKeyToLUKS2Container(node, key[:], sb.RecoveryKey(rkey), pbkdfOpts)
 }
 
 func (k RecoveryKey) String() string {
