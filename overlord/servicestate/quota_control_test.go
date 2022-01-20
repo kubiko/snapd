@@ -131,16 +131,14 @@ func checkSliceState(c *C, sliceName string, sliceMem quantity.Size) {
 }
 
 func systemctlCallsForSliceStart(names ...string) []expectedSystemctl {
-	var calls []expectedSystemctl
+	slices := []string{"start"}
 	for _, name := range names {
 		name = systemd.EscapeUnitNamePath(name)
-		slices := []string{"start", "snap." + name + ".slice"}
-		calls = join(calls, []expectedSystemctl{
-			{expArgs: slices},
-		})
-
+		slices = append(slices, "snap."+name+".slice")
 	}
-	return calls
+	return []expectedSystemctl{
+		{expArgs: slices},
+	}
 }
 
 func systemctlCallsForSliceStop(names ...string) []expectedSystemctl {
