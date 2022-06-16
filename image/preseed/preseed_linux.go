@@ -531,7 +531,21 @@ func runPreseedMode(preseedChroot string, targetSnapd *targetSnapdInfo) error {
 }
 
 func runUC20PreseedMode(opts *preseedOpts) error {
-	cmd := exec.Command("chroot", opts.PreseedChrootDir, "/usr/lib/snapd/snapd")
+	qemu_path := os.Getenv("SNAP_PRESEED_QEMU")
+	// const qemu = {
+	// 	"arm": "qemu-arm-static",
+	// 	"arm64": "qemu-aarch64-static"
+	// }
+	// TODO: determine if we need to run with qemu
+	var cmd *exec.Cmd
+	if qemu_path == "" {
+		cmd = exec.Command("chroot", opts.PreseedChrootDir, "/usr/lib/snapd/snapd")
+	} else {
+		// we need to copy qemu static binary into the chroot
+		cpCmd := exec.Command("cp", qemu_path, filepath.Join(opts.PreseedChrootDir, "tmp"))
+		cpCmd.Run()
+		cmd = exec.Command("chroot", opts.PreseedChrootDir, filepath.Join("/tmp", filepath.Base(qemu_path)), "/usr/lib/snapd/snapd")
+	}
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "SNAPD_PRESEED=1")
 	cmd.Stderr = Stderr
