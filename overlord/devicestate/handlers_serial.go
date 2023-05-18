@@ -234,24 +234,6 @@ func (rc *initialRegistrationContext) FinishRegistration(serial *asserts.Serial)
 	}
 	rc.deviceMgr.markRegistered()
 
-	// import any pending serial-bound system-user assertions
-	var asState string
-	err = rc.deviceMgr.state.Get("system-user-assertion", &asState)
-	if err != nil && !errors.Is(err, state.ErrNoState) {
-		logger.Noticef("failed to get auto-import assert state")
-	}
-
-	if asState == "pending" {
-		db := assertstate.DB(rc.deviceMgr.state)
-		rc.deviceMgr.state.Set("system-user-assertion", "done")
-
-		const sudoer = true
-		_, err := createAllKnownSystemUsers(rc.deviceMgr.state, db, rc.model, serial, sudoer)
-		if err != nil {
-			return err
-		}
-	}
-
 	// make sure we timely consider anything that was blocked on
 	// registration
 	rc.deviceMgr.state.EnsureBefore(0)
