@@ -25,7 +25,7 @@ package install
 import (
 	"bytes"
 	"crypto"
-	"encoding/base64"
+//	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -450,15 +450,15 @@ func writeTimesyncdClock(srcRootDir, dstRootDir string) error {
 // ApplyPreseededData applies the preseed payload from the given seed, including
 // installing snaps, to the given target system filesystem.
 func ApplyPreseededData(preseedSeed seed.PreseedCapable, writableDir string) error {
-	preseedAs, err := preseedSeed.LoadPreseedAssertion()
+/*	preseedAs, err := preseedSeed.LoadPreseedAssertion()
 	if err != nil {
 		return err
 	}
-
+*/
 	preseedArtifact := preseedSeed.ArtifactPath("preseed.tgz")
 
 	// TODO: consider a writer that feeds the file to stdin of tar and calculates the digest at the same time.
-	sha3_384, _, err := osutil.FileDigest(preseedArtifact, crypto.SHA3_384)
+/*	sha3_384, _, err := osutil.FileDigest(preseedArtifact, crypto.SHA3_384)
 	if err != nil {
 		return fmt.Errorf("cannot calculate preseed artifact digest: %v", err)
 	}
@@ -470,7 +470,7 @@ func ApplyPreseededData(preseedSeed seed.PreseedCapable, writableDir string) err
 	if !bytes.Equal(sha3_384, digest) {
 		return fmt.Errorf("invalid preseed artifact digest")
 	}
-
+*/
 	logger.Noticef("apply preseed data: %q, %q", writableDir, preseedArtifact)
 	cmd := exec.Command("tar", "--extract", "--preserve-permissions", "--preserve-order", "--gunzip", "--directory", writableDir, "-f", preseedArtifact)
 	if err := cmd.Run(); err != nil {
@@ -489,7 +489,7 @@ func ApplyPreseededData(preseedSeed seed.PreseedCapable, writableDir string) err
 		return err
 	}
 
-	preseedSnaps := make(map[string]*asserts.PreseedSnap)
+/*	preseedSnaps := make(map[string]*asserts.PreseedSnap)
 	for _, ps := range preseedAs.Snaps() {
 		preseedSnaps[ps.Name] = ps
 	}
@@ -529,7 +529,7 @@ func ApplyPreseededData(preseedSeed seed.PreseedCapable, writableDir string) err
 			return err
 		}
 	}
-
+*/
 	return nil
 }
 
