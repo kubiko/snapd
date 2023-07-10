@@ -670,15 +670,15 @@ func runUC20PreseedMode(opts *preseedCoreOptions) error {
 		return fmt.Errorf("error running snapd in preseed mode: %v\n", err)
 	}
 
-	digest, err := createPreseedArtifact(opts)
+	_, err := createPreseedArtifact(opts)
 	if err != nil {
 		return fmt.Errorf("cannot create preseed.tgz: %v", err)
 	}
 
-	if err := writePreseedAssertion(digest, opts); err != nil {
+/*	if err := writePreseedAssertion(digest, opts); err != nil {
 		return fmt.Errorf("cannot create preseed assertion: %v", err)
 	}
-
+*/
 	return nil
 }
 
